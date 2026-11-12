@@ -1,0 +1,59 @@
+rules_version = '2';
+
+// Regole di sicurezza del database. Da incollare in:
+// Console Firebase → Firestore Database → Regole → Pubblica.
+//
+// Logica:
+//  - Chi conosce il codice segreto della famiglia (quello nel link) può
+//    leggere, aggiungere e modificare persone.
+//  - Nessuno può elencare le famiglie: senza il link non si trova nulla.
+//  - Solo l'organizzatore (l'account Google che ha creato la famiglia)
+//    può eliminare persone o cambiare i dati della famiglia.
+//  - La cronologia è "solo aggiunta": nessuno può modificarla o cancellarla.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function familyPath(fid) {
+      return /databases/$(database)/documents/families/$(fid);
+    }
+    function familyExists(fid) {
+      return exists(familyPath(fid));
+    }
+    function isOwner(fid) {
+      return request.auth != null && get(familyPath(fid)).data.ownerUid == request.auth.uid;
+    }
+    function validPerson(pid) {
+      let p = request.resource.data;
+      return p.id == pid
+        && p.firstName is string && p.firstName.size() > 0 && p.firstName.size() <= 100
+        && p.lastName is string && p.lastName.size() <= 100
+        && p.sex in ['M', 'F']
+        && p.notes is string && p.notes.size() <= 5000
+        && (p.photo == null || (p.photo is string && p.photo.size() <= 250000))
+        && p.parents is list && p.parents.size() <= 2;
+    }
+
+    match /families/{fid} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if isOwner(fid)
+        && request.resource.data.ownerUid == resource.data.ownerUid;
+      allow delete: if false;
+
+      match /people/{pid} {
+        allow read: if familyExists(fid);
+        allow create, update: if familyExists(fid) && validPerson(pid);
+        allow delete: if isOwner(fid);
+      }
+
+      match /history/{hid} {
+        allow read: if familyExists(fid);
+        allow create: if familyExists(fid)
+          && request.resource.data.action in ['create', 'update', 'delete', 'restore'];
+        allow update, delete: if false;
+      }
+    }
+  }
+}
