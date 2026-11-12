@@ -153,7 +153,6 @@ class DemoStore {
   }
 
   async deletePerson(id, by) {
-    if (!this.owner) throw new Error('not-owner');
     const { writes, history } = planDelete(this.cache, id, by);
     for (const w of writes) this.cache.set(w.id, clean(w));
     this.cache.delete(id);
@@ -176,10 +175,17 @@ class DemoStore {
     this.emit();
   }
 
-  isOwner() { return this.owner; }
+  // In modalità demo i dati sono solo su questo telefono: chi lo usa è l'organizzatore.
+  isOwner() { return true; }
   onAuth(cb) { this.authListeners.add(cb); cb(); }
-  async signIn() { this.owner = true; this.persist(); for (const cb of this.authListeners) cb(); }
-  async signOut() { this.owner = false; this.persist(); for (const cb of this.authListeners) cb(); }
+
+  /** Cancella tutte le persone (per iniziare da zero). */
+  clearAll() {
+    this.cache = new Map();
+    this.hist = [];
+    this.persist();
+    this.emit();
+  }
   shareLink() { return location.href.split('#')[0]; }
 }
 

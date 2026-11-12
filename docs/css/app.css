@@ -198,9 +198,24 @@ h3.sub { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; colo
 
 /* ---------- mappa ---------- */
 #screen-map .map-canvas { position: absolute; inset: 0; }
-.map-toggle { position: absolute; z-index: 500; top: calc(12px + var(--safe-t)); left: 50%; transform: translateX(-50%); width: min(320px, calc(100% - 120px)); box-shadow: var(--shadow); }
-.map-base { position: absolute; z-index: 500; right: 12px; bottom: 28px; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 0; background: var(--surface); color: var(--text); font: inherit; font-weight: 700; box-shadow: var(--shadow); cursor: pointer; }
-.map-empty { position: absolute; z-index: 500; left: 16px; right: 16px; bottom: 16px; background: var(--surface); padding: 12px; border-radius: 12px; text-align: center; box-shadow: var(--shadow); }
+#screen-map .leaflet-container { background: #a8d3ec; font: inherit; }
+.map-toggle { position: absolute; z-index: 800; top: calc(12px + var(--safe-t)); left: 12px; right: 12px; margin: 0 auto; max-width: 340px; box-shadow: var(--shadow); }
+.map-tools { position: absolute; z-index: 800; right: 12px; bottom: 84px; display: flex; flex-direction: column; gap: 10px; }
+.map-base { position: absolute; z-index: 800; left: 12px; bottom: 28px; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 0; background: var(--surface); color: var(--text); font: inherit; font-weight: 700; box-shadow: var(--shadow); cursor: pointer; }
+.map-loading { position: absolute; z-index: 800; left: 50%; top: 50%; transform: translate(-50%, -50%); background: var(--surface); padding: 10px 16px; border-radius: 12px; box-shadow: var(--shadow); }
+.map-empty { position: absolute; z-index: 800; left: 16px; right: 16px; top: calc(76px + var(--safe-t)); background: var(--surface); padding: 12px; border-radius: 12px; text-align: center; box-shadow: var(--shadow); }
+.country-label { background: none; border: 0; width: auto !important; height: auto !important; }
+.country-label span {
+  display: block; transform: translate(-50%, -50%); white-space: nowrap;
+  font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6b6352; opacity: .85;
+  text-shadow: 0 0 2px #fff, 0 0 3px #fff, 0 0 4px rgba(255,255,255,.8);
+}
+.city-label { background: none; border: 0; width: auto !important; height: auto !important; }
+.city-label i { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: #fff; border: 2px solid #4b463b; box-sizing: border-box; }
+.city-label.capital i { background: #4b463b; box-shadow: 0 0 0 2px #fff; }
+.city-label span { position: absolute; left: 7px; top: 0; transform: translateY(-50%); white-space: nowrap; color: #2e2a22; font-weight: 600; text-shadow: 0 0 2px #fff, 0 0 3px #fff, 0 0 4px #fff; }
+.streets-on .country-label { display: none !important; }
+#screen-map .leaflet-control-attribution { font-size: 10px; background: rgba(255,255,255,.7); }
 .leaflet-top.leaflet-left { top: calc(var(--safe-t)); }
 .cluster-icon { background: none; }
 .cluster-bubble { width: 44px; height: 44px; border-radius: 50%; background: var(--primary); color: var(--primary-ink); display: grid; place-items: center; font-weight: 800; font-size: 16px; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.3); }

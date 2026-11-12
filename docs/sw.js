@@ -1,7 +1,7 @@
 // Service worker: rende l'app installabile e veloce da riaprire.
 // Strategia "rete prima, poi cache" per i file dell'app, così gli
 // aggiornamenti arrivano subito quando c'è connessione.
-const CACHE = 'albero-v2';
+const CACHE = 'albero-v4';
 const SHELL = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest',
   'js/app.js', 'js/config.js', 'js/i18n.js', 'js/relations.js', 'js/store.js',
@@ -9,6 +9,7 @@ const SHELL = [
   'icons/icon.svg', 'icons/icon-192.png',
   'vendor/leaflet/leaflet.js', 'vendor/leaflet/leaflet.css',
   'vendor/leaflet/leaflet.markercluster.js', 'vendor/leaflet/MarkerCluster.css',
+  'vendor/world/topojson-client.min.js', 'vendor/world/countries-50m.json', 'vendor/world/iso-numeric.json',
 ];
 
 self.addEventListener('install', (e) => {

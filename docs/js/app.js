@@ -243,11 +243,14 @@ function renderProfile(id) {
     <div class="pad">
       <a class="btn ghost block" href="#/tree/${id}">${ICONS.tree}${h(t('showInTree'))}</a>
     </div>
+    ${store.isOwner() ? `<div class="pad"><button class="btn danger block" id="pdel">${h(t('delete'))}</button></div>` : ''}
     <div class="meta pad">
       ${p.createdBy ? `<div>${h(t('createdBy', { who: p.createdBy.name, when: formatDateTime(p.createdAt) }))}</div>` : ''}
       ${p.updatedBy ? `<div>${h(t('lastEdit', { who: p.updatedBy.name, when: formatDateTime(p.updatedAt) }))}</div>` : ''}
       <a href="#/history/${id}">${ICONS.history}${h(t('history'))}</a>
     </div>`;
+  const pdel = $('#pdel', page);
+  if (pdel) pdel.onclick = () => deletePersonFlow(p);
   for (const b of page.querySelectorAll('[data-add]')) {
     b.onclick = () => {
       const kind = b.dataset.add;
@@ -452,15 +455,7 @@ function renderEdit(id, q) {
   // Elimina (solo organizzatore)
   const del = $('#del', form);
   if (del) {
-    del.onclick = async () => {
-      if (!await confirmDialog(t('deleteConfirm', { n: fullName(existing) }), t('delete'), true)) return;
-      try {
-        await store.deletePerson(existing.id, by());
-        formDirty = false;
-        toast(t('saved'));
-        go('#/people');
-      } catch (e) { toast(t('saveError', { e: e.message })); }
-    };
+    del.onclick = () => { formDirty = false; deletePersonFlow(existing); };
   }
 
   // Salva
@@ -523,6 +518,17 @@ function renderEdit(id, q) {
       submit.disabled = false;
     }
   };
+}
+
+async function deletePersonFlow(person) {
+  if (!await confirmDialog(t('deleteConfirm', { n: fullName(person) }), t('delete'), true)) return;
+  try {
+    const author = by();
+    await store.deletePerson(person.id, author);
+    if (person.id === meId) saveMe(null);
+    toast(t('deleted', { n: fullName(person) }));
+    go('#/people');
+  } catch (e) { toast(t('saveError', { e: e.message })); }
 }
 
 // Ricerca luoghi gratuita (OpenStreetMap Nominatim). Un utilizzo leggero,
@@ -619,8 +625,11 @@ function renderSettings() {
     <div class="card-block">
       <p class="muted small">${h(t('organizerHint'))}</p>
       ${store.isDemo
-        ? `<label class="switch"><input type="checkbox" id="demo-owner" ${store.isOwner() ? 'checked' : ''}><span></span>${h(t('demoOrganizer'))}</label>
-           <button class="btn ghost small" id="reset">${h(t('resetDemo'))}</button>`
+        ? `<p>${h(t('youAreOrganizer'))}</p>
+           <div class="btn-row">
+             <button class="btn danger small" id="clear">${h(t('clearDemo'))}</button>
+             <button class="btn ghost small" id="reset">${h(t('resetDemo'))}</button>
+           </div>`
         : store.signedInUser?.()
           ? `<p>${h(store.isOwner() ? t('youAreOrganizer') : t('notOrganizer'))}<br><small class="muted">${h(store.signedInUser().email || '')}</small></p>
              <button class="btn ghost small" id="signout">${h(t('signOut'))}</button>`
@@ -661,10 +670,18 @@ function renderSettings() {
       } catch (err) { toast(t('saveError', { e: err.message })); }
     };
   }
-  const demoOwner = $('#demo-owner', page);
-  if (demoOwner) demoOwner.onchange = async (e) => { e.target.checked ? await store.signIn() : await store.signOut(); renderSettings(); };
   const reset = $('#reset', page);
   if (reset) reset.onclick = async () => { if (await confirmDialog(t('resetDemo') + '?', 'OK', true)) { store.reset(); toast('OK'); } };
+  const clear = $('#clear', page);
+  if (clear) {
+    clear.onclick = async () => {
+      if (!await confirmDialog(t('clearDemoConfirm'), t('clearDemo'), true)) return;
+      store.clearAll();
+      saveMe(null);
+      if (tree) tree.positioned = false;
+      go('#/tree');
+    };
+  }
   const si = $('#signin', page);
   if (si) si.onclick = async () => { try { await store.signIn(); } catch (e) { toast(e.message); } renderSettings(); };
   const so = $('#signout', page);
