@@ -4,6 +4,7 @@ import { fullName, describeRelation, childrenOf, siblingsOf, searchPeople } from
 import { TreeView } from './tree.js';
 import { MapView } from './map.js';
 import { resizePhoto } from './photo.js';
+import { pickPerson, chooseLink, siblingCandidates } from './link.js';
 import { escapeHtml as h, avatarHtml, yearsLabel, toast, confirmDialog, ICONS } from './ui.js';
 
 const store = createStore();
@@ -137,15 +138,21 @@ function renderTree(focusId) {
     scr.innerHTML = `
       <header class="topbar">
         <h1 class="title" id="tree-title"></h1>
+        <button class="icon-btn" id="tree-link" aria-label="link">${ICONS.link}</button>
         <button class="icon-btn" id="tree-me" aria-label="me">${ICONS.me}</button>
       </header>
+      <div class="link-banner hidden" id="link-banner"><span></span><button class="btn ghost small" id="link-cancel"></button></div>
       <div id="tree-host"></div>
       <div class="hint" id="tree-hint"></div>`;
-    tree = new TreeView($('#tree-host', scr), { onOpen: (id) => go(`#/p/${id}`) });
+    tree = new TreeView($('#tree-host', scr), { onOpen: (id) => go(`#/p/${id}`), onLinkTap: treeLinkTap });
     $('#tree-me', scr).onclick = () => tree.setFocus(meId);
+    $('#tree-link', scr).onclick = () => setLinkMode(!tree.linkMode);
+    $('#link-cancel', scr).onclick = () => setLinkMode(false);
   }
   $('#tree-title', scr).textContent = store.familyName && store.familyName !== 'Demo' ? store.familyName : t('appName');
   $('#tree-me', scr).title = t('centerMe');
+  $('#tree-link', scr).title = t('link');
+  $('#link-cancel', scr).textContent = t('cancel');
   const hint = $('#tree-hint', scr);
   hint.textContent = t('tapHint');
   tree.render(people, meId, focusId);
@@ -154,6 +161,43 @@ function renderTree(focusId) {
   try { shown = +localStorage.getItem('hintShown') || 0; } catch { /* ignore */ }
   hint.classList.toggle('hidden', shown >= 3);
   if (shown < 3) { try { localStorage.setItem('hintShown', shown + 1); } catch { /* ignore */ } }
+}
+
+// ------------------------------------------------------------------ Collega
+let linkFirst = null;
+function setLinkMode(on) {
+  const scr = $('#screen-tree');
+  tree.linkMode = on;
+  linkFirst = null;
+  tree.markLinkFirst(null);
+  $('#tree-link', scr).classList.toggle('active', on);
+  $('#link-banner', scr).classList.toggle('hidden', !on);
+  $('#link-banner span', scr).textContent = t('linkPickFirst');
+  $('#tree-hint', scr).classList.add('hidden');
+}
+async function treeLinkTap(id) {
+  const scr = $('#screen-tree');
+  if (!linkFirst) {
+    linkFirst = id;
+    tree.markLinkFirst(id);
+    $('#link-banner span', scr).textContent = t('linkPickSecond', { n: people.get(id)?.firstName || '' });
+    return;
+  }
+  if (id === linkFirst) { linkFirst = null; tree.markLinkFirst(null); $('#link-banner span', scr).textContent = t('linkPickFirst'); return; }
+  const first = linkFirst;
+  const ok = await chooseLink(people, first, id, saveUpdates, (msg) => toast(msg, 3500));
+  setLinkMode(false);
+  if (ok) toast(t('linked'));
+}
+async function saveUpdates(updates) {
+  const author = by();
+  for (const u of updates) await store.savePerson(u, author);
+}
+async function profileLinkFlow(id) {
+  const other = await pickPerson(people, id, t('linkChoose', { n: people.get(id)?.firstName || '' }));
+  if (!other) return;
+  const ok = await chooseLink(people, id, other, saveUpdates, (msg) => toast(msg, 3500));
+  if (ok) { toast(t('linked')); render(); }
 }
 
 // ------------------------------------------------------------------ Mappa
@@ -239,6 +283,7 @@ function renderProfile(id) {
       <button data-add="partner">${ICONS.plus}${h(t('addPartner'))}</button>
       <button data-add="child">${ICONS.plus}${h(t('addChild'))}</button>
       <button data-add="sibling">${ICONS.plus}${h(t('addSibling'))}</button>
+      <button class="wide" id="plink">${ICONS.link}${h(t('linkExisting'))}</button>
     </div>
     <div class="pad">
       <a class="btn ghost block" href="#/tree/${id}">${ICONS.tree}${h(t('showInTree'))}</a>
@@ -249,6 +294,7 @@ function renderProfile(id) {
       ${p.updatedBy ? `<div>${h(t('lastEdit', { who: p.updatedBy.name, when: formatDateTime(p.updatedAt) }))}</div>` : ''}
       <a href="#/history/${id}">${ICONS.history}${h(t('history'))}</a>
     </div>`;
+  $('#plink', page).onclick = () => profileLinkFlow(id);
   const pdel = $('#pdel', page);
   if (pdel) pdel.onclick = () => deletePersonFlow(p);
   for (const b of page.querySelectorAll('[data-add]')) {
@@ -324,6 +370,7 @@ function renderEdit(id, q) {
     }
   }
   const title = existing ? fullName(existing) : t('newPerson');
+  const alsoSibs = !existing && rel === 'parent' && of ? siblingCandidates(people, of.id, p.id) : [];
   const exclude = [p.id];
 
   page.innerHTML = `
@@ -365,8 +412,10 @@ function renderEdit(id, q) {
       ${placeField('residence', t('residence'), p.residence)}
 
       <fieldset><legend>${h(t('family'))}</legend>
-        <div class="field"><label><small>${h(t('parents'))} 1</small><select name="par0" class="input">${personOptions(p.parents[0], exclude)}</select></label></div>
-        <div class="field"><label><small>${h(t('parents'))} 2</small><select name="par1" class="input">${personOptions(p.parents[1], exclude)}</select></label></div>
+        <div class="field"><label><small>${h(t('parent1'))}</small><select name="par0" class="input">${personOptions(p.parents[0], exclude)}</select></label></div>
+        <div class="field"><label><small>${h(t('parent2'))}</small><select name="par1" class="input">${personOptions(p.parents[1], exclude)}</select></label></div>
+        ${alsoSibs.length ? `<div class="also"><small>${h(t('alsoForSiblingsOf', { n: of.firstName }))}</small>
+          ${alsoSibs.map((s2) => `<label class="check"><input type="checkbox" name="also" value="${s2.id}" checked> ${h(fullName(s2))}</label>`).join('')}</div>` : ''}
         <div class="field"><label><small>${h(t('partner'))}</small><select name="partnerId" class="input">${personOptions(p.partnerId, exclude)}</select></label></div>
       </fieldset>
 
@@ -501,9 +550,11 @@ function renderEdit(id, q) {
       const author = isSelf ? { id: person.id, name: `${person.firstName} ${person.lastName}`.trim() } : by();
       const saved = await store.savePerson(person, author);
       if (!existing && rel === 'parent' && of) {
-        const child = people.get(of.id);
-        if (child && (child.parents || []).length < 2 && !(child.parents || []).includes(saved.id)) {
-          await store.savePerson({ ...child, parents: [...(child.parents || []), saved.id] }, author);
+        for (const cid of [of.id, ...fd.getAll('also')]) {
+          const child = people.get(cid);
+          if (child && (child.parents || []).length < 2 && !(child.parents || []).includes(saved.id)) {
+            await store.savePerson({ ...child, parents: [...(child.parents || []), saved.id] }, author);
+          }
         }
       }
       if (isSelf) { saveMe(saved.id); if (tree) tree.positioned = false; }

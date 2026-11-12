@@ -241,9 +241,10 @@ function buildLines(people, positions) {
 // ---------------------------------------------------------------
 // 4) Componente interattivo
 export class TreeView {
-  constructor(container, { onOpen }) {
+  constructor(container, { onOpen, onLinkTap }) {
     this.el = container;
     this.onOpen = onOpen;
+    this.onLinkTap = onLinkTap || (() => {});
     this.scale = 0.8;
     this.tx = 0; this.ty = 0;
     this.focusId = null;
@@ -381,7 +382,13 @@ export class TreeView {
     }, { passive: false });
   }
 
+  markLinkFirst(id) {
+    for (const c of this.cards.querySelectorAll('.card.link-first')) c.classList.remove('link-first');
+    if (id) this.cards.querySelector(`.card[data-id="${CSS.escape(id)}"]`)?.classList.add('link-first');
+  }
+
   handleTap(id) {
+    if (this.linkMode) { this.onLinkTap(id); return; }
     if (id === this.focusId) this.onOpen(id);
     else this.setFocus(id);
   }
