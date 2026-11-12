@@ -1,7 +1,7 @@
 // Service worker: rende l'app installabile e veloce da riaprire.
 // Strategia "rete prima, poi cache" per i file dell'app, così gli
 // aggiornamenti arrivano subito quando c'è connessione.
-const CACHE = 'albero-v1';
+const CACHE = 'albero-v2';
 const SHELL = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest',
   'js/app.js', 'js/config.js', 'js/i18n.js', 'js/relations.js', 'js/store.js',

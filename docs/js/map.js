@@ -41,6 +41,7 @@ export class MapView {
         <button data-m="lives"></button>
       </div>
       <div class="map-canvas"></div>
+      <button class="map-base"></button>
       <div class="map-empty hidden"></div>`;
     this.canvas = this.el.querySelector('.map-canvas');
     this.empty = this.el.querySelector('.map-empty');
@@ -51,6 +52,7 @@ export class MapView {
         this.draw(true);
       };
     }
+    this.el.querySelector('.map-base').onclick = () => this.setBase(this.base === 'street' ? 'satellite' : 'street');
     this.el.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-open]');
       if (btn) this.onOpen(btn.dataset.open);
@@ -63,13 +65,29 @@ export class MapView {
     this.el.querySelector('[data-m=born]').textContent = t('mapBorn');
     this.el.querySelector('[data-m=lives]').textContent = t('mapLives');
     await loadLeaflet();
+    if (this.layers) this.setBase(this.base);
     const L = window.L;
     if (!this.map) {
       this.map = L.map(this.canvas, { worldCopyJump: true, zoomControl: true }).setView([45, 15], 4);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      }).addTo(this.map);
+      const osm = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+      // Mappa stradale in stile "Google Maps" (CARTO Voyager, gratuita, nessuna chiave)
+      const street = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        maxZoom: 20, subdomains: 'abcd',
+        attribution: `${osm} &copy; <a href="https://carto.com/attributions">CARTO</a>`,
+      });
+      // Vista satellite (Esri World Imagery) + confini e nomi delle città
+      const satellite = L.layerGroup([
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19, attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
+        }),
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19,
+        }),
+      ]);
+      this.layers = { street, satellite };
+      let base = 'street';
+      try { base = localStorage.getItem('mapBase') === 'satellite' ? 'satellite' : 'street'; } catch { /* ignore */ }
+      this.setBase(base);
       this.cluster = L.markerClusterGroup({
         showCoverageOnHover: false,
         spiderfyOnMaxZoom: true,
@@ -85,6 +103,16 @@ export class MapView {
     setTimeout(() => this.map.invalidateSize(), 50);
     this.draw(this.firstFit);
     this.firstFit = false;
+  }
+
+  setBase(name) {
+    for (const [k, layer] of Object.entries(this.layers)) {
+      if (k === name) layer.addTo(this.map); else this.map.removeLayer(layer);
+    }
+    this.base = name;
+    try { localStorage.setItem('mapBase', name); } catch { /* ignore */ }
+    const btn = this.el.querySelector('.map-base');
+    btn.textContent = name === 'street' ? t('mapSatellite') : t('mapStreet');
   }
 
   draw(fit) {

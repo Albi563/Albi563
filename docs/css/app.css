@@ -199,6 +199,7 @@ h3.sub { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; colo
 /* ---------- mappa ---------- */
 #screen-map .map-canvas { position: absolute; inset: 0; }
 .map-toggle { position: absolute; z-index: 500; top: calc(12px + var(--safe-t)); left: 50%; transform: translateX(-50%); width: min(320px, calc(100% - 120px)); box-shadow: var(--shadow); }
+.map-base { position: absolute; z-index: 500; right: 12px; bottom: 28px; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 0; background: var(--surface); color: var(--text); font: inherit; font-weight: 700; box-shadow: var(--shadow); cursor: pointer; }
 .map-empty { position: absolute; z-index: 500; left: 16px; right: 16px; bottom: 16px; background: var(--surface); padding: 12px; border-radius: 12px; text-align: center; box-shadow: var(--shadow); }
 .leaflet-top.leaflet-left { top: calc(var(--safe-t)); }
 .cluster-icon { background: none; }
