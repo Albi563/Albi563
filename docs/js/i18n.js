@@ -1,6 +1,7 @@
 // Testi dell'interfaccia in 4 lingue.
 const STRINGS = {
   it: {
+    importLocal: 'Importa le {n} persone salvate su questo telefono', importLocalConfirm: 'Importare nella famiglia condivisa le {n} persone inserite su questo telefono?',
     link: 'Collega persone', linkExisting: 'Collega a una persona già presente', linkTitle: 'Che legame c\'è?',
     linkChoose: 'Chi vuoi collegare a {n}?', linkPickFirst: 'Collega: tocca la prima persona', linkPickSecond: 'Ora tocca chi collegare a {n}',
     relParentOf: '<b>{a}</b> è genitore di <b>{b}</b>', relPartners: '<b>{a}</b> e <b>{b}</b> sono partner', relSiblings: '<b>{a}</b> e <b>{b}</b> sono fratelli',
@@ -90,6 +91,7 @@ const STRINGS = {
     months: ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'],
   },
   en: {
+    importLocal: 'Import the {n} people saved on this phone', importLocalConfirm: 'Import the {n} people entered on this phone into the shared family?',
     link: 'Link people', linkExisting: 'Link to someone already in the tree', linkTitle: 'How are they related?',
     linkChoose: 'Who do you want to link to {n}?', linkPickFirst: 'Link: tap the first person', linkPickSecond: 'Now tap who to link to {n}',
     relParentOf: '<b>{a}</b> is the parent of <b>{b}</b>', relPartners: '<b>{a}</b> and <b>{b}</b> are partners', relSiblings: '<b>{a}</b> and <b>{b}</b> are siblings',
@@ -179,6 +181,7 @@ const STRINGS = {
     months: ['January','February','March','April','May','June','July','August','September','October','November','December'],
   },
   ro: {
+    importLocal: 'Importă cele {n} persoane salvate pe acest telefon', importLocalConfirm: 'Importi în familia comună cele {n} persoane introduse pe acest telefon?',
     link: 'Leagă persoane', linkExisting: 'Leagă de cineva deja în arbore', linkTitle: 'Ce legătură au?',
     linkChoose: 'Pe cine vrei să legi de {n}?', linkPickFirst: 'Leagă: atinge prima persoană', linkPickSecond: 'Acum atinge pe cine legi de {n}',
     relParentOf: '<b>{a}</b> este părintele lui <b>{b}</b>', relPartners: '<b>{a}</b> și <b>{b}</b> sunt parteneri', relSiblings: '<b>{a}</b> și <b>{b}</b> sunt frați',
@@ -268,6 +271,7 @@ const STRINGS = {
     months: ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'],
   },
   es: {
+    importLocal: 'Importar las {n} personas guardadas en este teléfono', importLocalConfirm: '¿Importar a la familia compartida las {n} personas introducidas en este teléfono?',
     link: 'Vincular personas', linkExisting: 'Vincular con alguien ya en el árbol', linkTitle: '¿Qué relación tienen?',
     linkChoose: '¿A quién quieres vincular con {n}?', linkPickFirst: 'Vincular: toca la primera persona', linkPickSecond: 'Ahora toca a quién vincular con {n}',
     relParentOf: '<b>{a}</b> es padre/madre de <b>{b}</b>', relPartners: '<b>{a}</b> y <b>{b}</b> son pareja', relSiblings: '<b>{a}</b> y <b>{b}</b> son hermanos',

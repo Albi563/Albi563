@@ -18,6 +18,35 @@ let formDirty = false;
 const $ = (sel, root = document) => root.querySelector(sel);
 const app = $('#app');
 
+// ------------------------------------------------------------------ dati della demo
+/** Persone inserite in modalità demo su questo telefono (prima di Firebase). */
+function localDemoPeople() {
+  if (store.isDemo) return [];
+  try { return JSON.parse(localStorage.getItem('demo-family') || 'null')?.people || []; } catch { return []; }
+}
+async function importLocalDemo() {
+  const list = localDemoPeople();
+  if (!list.length) return;
+  if (!await confirmDialog(t('importLocalConfirm', { n: list.length }), t('importBackup'))) return;
+  try {
+    await store.importAll(list, by());
+    try { localStorage.setItem('demo-imported', '1'); } catch { /* ignore */ }
+    toast(t('imported', { n: list.length }));
+    render();
+  } catch (e) { toast(t('saveError', { e: e.message }), 5000); }
+}
+function localImportButton() {
+  const n = localDemoPeople().length;
+  let done = false;
+  try { done = localStorage.getItem('demo-imported') === '1'; } catch { /* ignore */ }
+  return n && store.isOwner() && !done
+    ? `<button class="btn primary block" data-import-local>${h(t('importLocal', { n }))}</button>` : '';
+}
+function bindLocalImport(root) {
+  const b = root.querySelector('[data-import-local]');
+  if (b) b.onclick = importLocalDemo;
+}
+
 // ------------------------------------------------------------------ io
 function meKey() { return `me:${store.familyId}`; }
 function loadMe() { try { return localStorage.getItem(meKey()); } catch { return null; } }
@@ -93,13 +122,15 @@ function renderWho() {
       <h1>${h(t('whoAreYou'))}</h1>
       ${langPicker()}
       ${empty ? `<p class="muted">${h(t('emptyTreeHint'))}</p>
-        <a class="btn primary block" href="#/new?self=1">${h(t('addMyself'))}</a>`
+        ${localImportButton()}
+        <a class="btn ${localImportButton() ? 'ghost' : 'primary'} block" href="#/new?self=1">${h(t('addMyself'))}</a>`
       : `<p class="muted">${h(t('whoAreYouHint'))}</p>
         <input id="who-q" class="input" type="search" autocomplete="off" placeholder="${h(t('typeFullName'))}">
         <div id="who-res" class="list"></div>
         <a class="btn ghost block" href="#/new?self=1">${h(t('notInTree'))}</a>`}
     </div>`;
   bindLangPicker(page, renderWho);
+  bindLocalImport(page);
   const q = $('#who-q', page);
   if (!q) return;
   const res = $('#who-res', page);
@@ -663,6 +694,7 @@ function renderSettings() {
     <h3 class="sub">${h(t('recentChanges'))}</h3>
     <div class="pad-x"><a class="btn ghost small" href="#/history">${ICONS.history}${h(t('history'))}</a></div>
 
+    ${localImportButton() ? `<div class="pad">${localImportButton()}</div>` : ''}
     <h3 class="sub">${h(t('backup'))}</h3>
     <div class="card-block">
       <p class="muted small">${h(t('backupHint'))}</p>
@@ -689,6 +721,7 @@ function renderSettings() {
     <p class="center muted small pad">v1.0</p>`;
 
   bindLangPicker(page);
+  bindLocalImport(page);
   $('#chg-me', page).onclick = () => { saveMe(null); render(); };
   $('#copy', page).onclick = async () => {
     try {
